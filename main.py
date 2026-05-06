@@ -1,6 +1,10 @@
 import streamlit as st
 import requests
 import time
+import markdown
+
+def render_md(text):
+    return markdown.markdown(text)
 
 # ===== CONFIG =====
 st.set_page_config(
@@ -13,18 +17,16 @@ st.set_page_config(
 st.markdown("""
 <style>
 
-/* Background gradient + pattern */
+/* Background */
 .stApp {
     background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
     color: white;
 }
 
-/* overlay pattern statistik */
+/* pattern */
 .stApp::before {
     content: "";
     position: fixed;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
     background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
@@ -32,23 +34,39 @@ st.markdown("""
     z-index: 0;
 }
 
-/* chat container */
+/* container */
 .block-container {
     position: relative;
     z-index: 1;
 }
 
-/* bubble styling */
-[data-testid="stChatMessage"] {
-    border-radius: 15px;
-    padding: 10px;
-    margin-bottom: 10px;
-}
-
-/* input box */
+/* input */
 .stChatInput textarea {
     background-color: #1f2a38 !important;
     color: white !important;
+}
+
+/* USER bubble kanan */
+.user-bubble {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 15px;
+    display: inline-block;
+    float: right;
+    clear: both;
+    margin: 5px 0;
+}
+
+/* BOT bubble kiri */
+.bot-bubble {
+    background-color: #1f2a38;
+    padding: 10px 15px;
+    border-radius: 15px;
+    display: inline-block;
+    float: left;
+    clear: both;
+    margin: 5px 0;
 }
 
 </style>
@@ -62,31 +80,49 @@ st.caption("AI Assistant • n8n • RAG System")
 if "chatInputs" not in st.session_state:
     st.session_state.chatInputs = []
 
-# ===== INITIAL MESSAGE (NEW) =====
+if "waiting_response" not in st.session_state:   # ✅ FIX WAJIB
+    st.session_state.waiting_response = False
+
+# ===== INITIAL MESSAGE =====
 if len(st.session_state.chatInputs) == 0:
     with st.spinner("🤖 Memulai chatbot..."):
         time.sleep(1)
     st.session_state.chatInputs.append({
         "role": "assistant",
-        "content": "👋 Assalamualaikum brosis statistician!\n\naku adalah AI Assistant Statistika UII yang akan menjawab kamu seputar Statistika UII.\n\nAda yang mau ditanyain? 😊"
+        "content": "👋 Assalamualaikum brosis statistician!\n\nAku adalah AI Assistant Statistika UII yang akan membantu kamu.\n\nAda yang mau ditanyain? 😊"
     })
 
 # ===== DISPLAY CHAT =====
 for msg in st.session_state.chatInputs:
     if msg["role"] == "user":
-        with st.chat_message("user"):
-            st.markdown(msg["content"])
+        st.markdown(
+            f'<div class="user-bubble">🧑 {render_md(msg["content"])}</div>',
+            unsafe_allow_html=True
+        )
     else:
-        with st.chat_message("assistant"):
-            st.markdown(msg["content"])
+        st.markdown(
+            f'<div class="bot-bubble">🤖 {render_md(msg["content"])}</div>',
+            unsafe_allow_html=True
+        )
 
 # ===== INPUT =====
 prompt = st.chat_input("Tanya tentang statistika UII...")
 
 if prompt:
-    st.session_state.chatInputs.append({"role": "user", "content": prompt})
+    st.session_state.chatInputs.append({
+        "role": "user",
+        "content": prompt
+    })
 
-    with st.spinner("📊 Bot sedang menganalisis data..."):
+    st.session_state.waiting_response = True
+    st.rerun()
+
+# ===== HANDLE RESPONSE =====
+if st.session_state.waiting_response:
+
+    prompt = st.session_state.chatInputs[-1]["content"]
+
+    with st.spinner("📊 Bot sedang mencari informasi..."):
         time.sleep(1)
 
         try:
@@ -96,13 +132,15 @@ if prompt:
             )
 
             data = response.json()
-
-            # fleksibel
             reply = data.get("output") or data.get("reply") or "Tidak ada respon dari server"
 
         except Exception as e:
             reply = f"⚠️ Error: {e}"
 
-    st.session_state.chatInputs.append({"role": "assistant", "content": reply})
+    st.session_state.chatInputs.append({
+        "role": "assistant",
+        "content": reply
+    })
 
+    st.session_state.waiting_response = False
     st.rerun()
