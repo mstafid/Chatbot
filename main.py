@@ -127,7 +127,7 @@ if st.session_state.waiting_response:
 
         try:
             response = requests.post(
-                "https://yape.app.n8n.cloud/webhook/2eae7dfc-cc03-4d86-a3ac-a514950ed67c/chat",
+                "https://kaletooo.app.n8n.cloud/webhook/2eae7dfc-cc03-4d86-a3ac-a514950ed67c/chat",
                 json={"chatInput": prompt}
             )
 
