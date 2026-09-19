@@ -1,0 +1,811 @@
+{
+  "name": "RAG",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const groundTruth = $input.first().json.Ground_Truth;\nconst chatbotAnswer = $input.first().json.Chatbot_Answer;\n\nconst apiKey = 'hEzkuQk1dJ0z4G6yLQl4w6J5lRpzFz7D';\n\nconst headers = {\n  'Content-Type': 'application/json',\n  'Authorization': `Bearer ${apiKey}`\n};\n\n// Kirim keduanya dalam 1 request untuk menghindari rate limit 429\nconst res = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://api.mistral.ai/v1/embeddings',\n  headers,\n  body: JSON.stringify({\n    model: 'mistral-embed',\n    input: [groundTruth, chatbotAnswer]\n  })\n});\n\nconst parsed = typeof res === 'string' ? JSON.parse(res) : res;\n\nconst vecGT = parsed.data[0].embedding;\nconst vecCA = parsed.data[1].embedding;\n\nfunction cosineSimilarity(a, b) {\n  const dot = a.reduce((sum, val, i) => sum + val * b[i], 0);\n  const normA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));\n  const normB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));\n  return dot / (normA * normB);\n}\n\nconst similarity = cosineSimilarity(vecGT, vecCA);\n\nreturn [{\n  json: {\n    chatInput: $input.first().json.chatInput,\n    Ground_Truth: groundTruth,\n    Chatbot_Answer: chatbotAnswer,\n    similarity: parseFloat(similarity.toFixed(4))\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4528,
+        -96
+      ],
+      "id": "a89a2f42-0764-4c7b-a4f4-da0dbc7999b1",
+      "name": "Cosine Similarity"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1g953sMry_jaXn5VLM6P755l_5O45Ik9-olCkIhzAEJQ",
+          "mode": "list",
+          "cachedResultName": "Evaluation dataset",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1g953sMry_jaXn5VLM6P755l_5O45Ik9-olCkIhzAEJQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 841706862,
+          "mode": "list",
+          "cachedResultName": "RAG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1g953sMry_jaXn5VLM6P755l_5O45Ik9-olCkIhzAEJQ/edit#gid=841706862"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "input": "={{ $json.chatInput }}",
+            "Ground_Truth": "={{ $json.Ground_Truth }}",
+            "Chatbot_Answer": "={{ $('AI Agent1').item.json.output }}",
+            "Similarity": "={{ $json.similarity }}",
+            "precision": "={{ $json.precision }}",
+            "recall": "={{ $json.recall }}",
+            "f1_score": "={{ $json.f1_score }}"
+          },
+          "matchingColumns": [
+            "input"
+          ],
+          "schema": [
+            {
+              "id": "input",
+              "displayName": "input",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ground_Truth",
+              "displayName": "Ground_Truth",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Chatbot_Answer",
+              "displayName": "Chatbot_Answer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Similarity",
+              "displayName": "Similarity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "LLM_Judge",
+              "displayName": "LLM_Judge",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Rule_Based",
+              "displayName": "Rule_Based",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "precision",
+              "displayName": "precision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "recall",
+              "displayName": "recall",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "f1_score",
+              "displayName": "f1_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4896,
+        -176
+      ],
+      "id": "e042ef91-53d3-4a48-a253-464f86e13b0d",
+      "name": "Update Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iRmuhOPb16nN41MZ",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "mistral-medium",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        3856,
+        64
+      ],
+      "id": "8a266f2a-7e7d-43ca-a308-48b933c7970e",
+      "name": "Mistral Cloud Chat Model1",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "KRqvM1LwXIYzET5q",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Anda adalah asisten AI resmi untuk Program Studi Statistika Universitas Islam Indonesia (UII).\n\nTugas Anda adalah membantu pengguna (mahasiswa, dosen, calon mahasiswa, dan publik) dalam menjawab pertanyaan berdasarkan informasi yang tersedia pada sistem Retrieval-Augmented Generation (RAG) dari database pengetahuan Prodi Statistika UII.\n\nATURAN UTAMA:\n1. Jawab hanya berdasarkan konteks yang diambil dari database (Pinecone).\n2. Jika informasi tidak ditemukan dalam konteks, jawab:\n   \"Maaf, saya tidak menemukan informasi tersebut dalam sumber resmi Prodi Statistika UII.\" dan berikan link yang menuju statistics.uii.ac.id untuk mencari informasi lebih lanjut \n3. Jangan mengarang atau menambahkan informasi diluar konteks.\n4. Jawaban harus singkat, jelas, dan informatif.\n5. Gunakan Bahasa Indonesia yang baik dan formal.\n6. Jika pengguna bertanya tentang:\n   - Visi, Misi, dan Tujuan (https://statistics.uii.ac.id/visimisitujuan/)\n   - Sejarah (https://statistics.uii.ac.id/sejarah/)\n   maka berikan jawaban yang terstruktur dan mudah dibaca.\n   - Pendaftaran statistika uii berikan link https://statistics.uii.ac.id/pmbstatistika/\n7. Jika konteks berupa tabel, ubah menjadi poin-poin atau daftar yang mudah dipahami.\n8. Jika terdapat beberapa potongan konteks relevan, gabungkan secara logis.\n\nGAYA PENJAWABAN:\n- Formal, sopan, dan akademik\n- Ringkas namun tetap informatif\n- Mudah dipahami mahasiswa",
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "4f54af12-40d4-4fa3-8f95-0b94642f10ee",
+      "name": "AI Agent1",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        3888,
+        -96
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Basis data vektor (vector database) untuk sistem chatbot berbasis Retrieval-Augmented Generation (RAG) pada Program Studi Statistika Universitas Islam Indonesia (UII).\n\nTujuan utama database ini adalah untuk mendukung chatbot AI yang mampu memberikan jawaban akurat, relevan, dan berbasis sumber resmi dari Prodi Statistika UII.\n\nSemua jawaban yang dihasilkan harus berdasarkan konteks hasil pencarian (retrieved context) untuk menghindari kesalahan informasi atau halusinasi AI.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "semhas",
+          "mode": "list",
+          "cachedResultName": "semhas"
+        },
+        "topK": 6,
+        "options": {
+          "pineconeNamespace": "scrape"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        3952,
+        208
+      ],
+      "id": "abf4f0b2-1a12-4f79-953e-7faad3304e2e",
+      "name": "Pinecone Vector Store2",
+      "credentials": {
+        "pineconeApi": {
+          "id": "Xmu276Qb5jfkALK6",
+          "name": "Pinecone account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0c3d1263-8cf4-40ec-9abe-1cc1beaa9733",
+              "name": "chatInput",
+              "value": "={{ $json.input }}",
+              "type": "string"
+            },
+            {
+              "id": "d71e6a0d-8713-4bdd-8a05-6c0beedd7589",
+              "name": "Ground_Truth",
+              "value": "={{ $json.Ground_Truth }}",
+              "type": "string"
+            },
+            {
+              "id": "f0587dde-4596-4e4f-aa19-1da573c6ff03",
+              "name": "Chatbot_Answer",
+              "value": "={{ $json.Chatbot_Answer }}",
+              "type": "string"
+            },
+            {
+              "id": "d42ac976-ed48-4f12-8ae8-e856b515cd41",
+              "name": "Similarity",
+              "value": "={{ $json.Similarity }}",
+              "type": "string"
+            },
+            {
+              "id": "7bf9c0ed-8bc5-4915-941e-8e5c42d968cc",
+              "name": "LLM_judge",
+              "value": "={{ $json.LLM_Judge }}",
+              "type": "number"
+            },
+            {
+              "id": "21ef935c-b045-409f-ae61-6e3380228b52",
+              "name": "Rule_Based",
+              "value": "={{ $json.Rule_Based }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3744,
+        -192
+      ],
+      "id": "3bdedf89-d4df-451d-bb99-bff6b5349d55",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        3728,
+        -32
+      ],
+      "id": "ad89f981-6e32-4b20-80cd-8c6bd3a18982",
+      "name": "When chat message received",
+      "webhookId": "2eae7dfc-cc03-4d86-a3ac-a514950ed67c"
+    },
+    {
+      "parameters": {
+        "operation": "checkIfEvaluating"
+      },
+      "type": "n8n-nodes-base.evaluation",
+      "typeVersion": 4.8,
+      "position": [
+        4160,
+        -96
+      ],
+      "id": "f7090fce-553a-441a-a164-31be9370ed27",
+      "name": "Evaluation"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        4336,
+        -32
+      ],
+      "id": "4f2ac814-8141-4068-abf7-970c0be44bc2",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4336,
+        -176
+      ],
+      "id": "ffebb032-6e6f-4819-87b0-845bb1ead0c8",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4720,
+        -176
+      ],
+      "id": "a27e4505-424d-4592-b776-d31f15b72151",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map(item => {\n  // ambil output AI & jawaban ground truth\n  const predicted = (item.json.Ground_Truth || \"\").toLowerCase();\n  const expected = (item.json.output || \"\").toLowerCase();\n\n  // tokenisasi sederhana\n  const predTokens = predicted.split(/\\s+/).filter(Boolean);\n  const expTokens = expected.split(/\\s+/).filter(Boolean);\n\n  // hitung token overlap\n  const overlap = predTokens.filter(token => expTokens.includes(token));\n\n  // hitung precision, recall, f1\n  const precision = overlap.length / (predTokens.length || 1);\n  const recall = overlap.length / (expTokens.length || 1);\n  const f1 = (2 * precision * recall) / (precision + recall || 1);\n\n  return {\n    json: {\n      chatInput: item.json.chatInput,\n      Chatbot_Answer: item.json.output,\n      Ground_Truth: item.json.Ground_Truth,\n      precision: Number(precision.toFixed(2)),\n      recall: Number(recall.toFixed(2)),\n      f1_score: Number(f1.toFixed(2))\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4528,
+        -256
+      ],
+      "id": "a0e774a0-713a-474d-a88b-a59d56906e13",
+      "name": "F1_Score"
+    },
+    {
+      "parameters": {
+        "source": "googleSheets",
+        "documentId": {
+          "__rl": true,
+          "value": "1g953sMry_jaXn5VLM6P755l_5O45Ik9-olCkIhzAEJQ",
+          "mode": "list",
+          "cachedResultName": "Evaluation dataset",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1g953sMry_jaXn5VLM6P755l_5O45Ik9-olCkIhzAEJQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 841706862,
+          "mode": "list",
+          "cachedResultName": "RAG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1g953sMry_jaXn5VLM6P755l_5O45Ik9-olCkIhzAEJQ/edit#gid=841706862"
+        }
+      },
+      "type": "n8n-nodes-base.evaluationTrigger",
+      "typeVersion": 4.7,
+      "position": [
+        3584,
+        -192
+      ],
+      "id": "5e402e5b-e305-4c1f-b954-bc96481a131f",
+      "name": "When fetching a dataset row",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iRmuhOPb16nN41MZ",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        2688,
+        -16
+      ],
+      "id": "331fd8ae-835e-4691-8858-18374f4a3741",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1Fp6EhC9xtno3PkJ_YbK8DH8JwX7yu_m_",
+          "mode": "list",
+          "cachedResultName": "uii_statistics_data.json",
+          "cachedResultUrl": "https://drive.google.com/file/d/1Fp6EhC9xtno3PkJ_YbK8DH8JwX7yu_m_/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2848,
+        -16
+      ],
+      "id": "1970eb00-b0cf-452d-acc3-8b12a3e7033b",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "sV87VySakESBt7BR",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        3344,
+        496
+      ],
+      "id": "fd30ebc1-0ce9-4382-9681-f9eb81115062",
+      "name": "Embeddings Mistral Cloud",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "KRqvM1LwXIYzET5q",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.text }}",
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "metadata",
+                "value": "={{ $json.metadata }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        3440,
+        128
+      ],
+      "id": "7f2adc52-6d37-4ef4-b63b-ccb037a65122",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "semhas",
+          "mode": "list",
+          "cachedResultName": "semhas"
+        },
+        "options": {
+          "pineconeNamespace": "scrape"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        3344,
+        -16
+      ],
+      "id": "619c55b1-a24c-48f3-b012-5abe1659c026",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "Xmu276Qb5jfkALK6",
+          "name": "Pinecone account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.all();\nconst items = [];\n\nfor (const item of raw) {\n  const docs = item.json.data.documents;\n  \n  if (!docs || !Array.isArray(docs)) continue;\n  \n  for (const doc of docs) {\n    const text = doc.content;\n    \n    if (!text || text.trim().length < 20) continue;\n\n    items.push({\n      json: {\n        text: text,\n      }\n    });\n  }\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3168,
+        -16
+      ],
+      "id": "eac2915f-7972-4607-b4d0-2f73ee65e145",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        3008,
+        -16
+      ],
+      "id": "da6c4fe4-126c-48c4-979d-1d00678fff03",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        3440,
+        256
+      ],
+      "id": "018372d3-5168-4635-ad41-15301ed52622",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        3968,
+        96
+      ],
+      "id": "d619afc5-b8f0-491d-9e51-a82afed7e7f4",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Cosine Similarity": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Mistral Cloud Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Evaluation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store2": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluation": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Cosine Similarity",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "F1_Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Update Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "F1_Score": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When fetching a dataset row": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Mistral Cloud": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Pinecone Vector Store2",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "9328f5f9-1fdd-4997-9477-511cb6d8fc24",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "16f42fc08dbd67a8d299d78d60bdbd553d5a4ca0eccd0aa2a4104b73857163b3"
+  },
+  "nodeGroups": [],
+  "id": "ec2RuJyPurv3DIXC",
+  "tags": []
+}
